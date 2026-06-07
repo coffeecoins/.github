@@ -141,41 +141,57 @@ protect_branch "develop" '{
 }'
 
 # ---------------------------------------------------------------------------
-# Org-level rulesets (branch naming patterns, hotfix/release/* protection)
-# Requires admin:org token scope
+# Org-level rulesets (branch naming patterns — applies to ALL repos in org)
+# This only needs to be created once per org, not once per repo.
+# Requires admin:org token scope.
 # ---------------------------------------------------------------------------
-echo "Applying org-level rulesets..."
+echo "Checking org-level rulesets..."
 
-# Ruleset: enforce branch naming conventions across all repos
-gh api "orgs/${ORG}/rulesets" --method POST --input - <<'RULESET'
+EXISTING_RULESET=$(gh api "orgs/${ORG}/rulesets" --jq '[.[] | select(.name == "branch-naming-conventions")] | length' 2>/dev/null)
+
+if [ "${EXISTING_RULESET}" = "1" ]; then
+  echo "  ✓ Branch naming ruleset already active (org-wide, no action needed)"
+else
+  echo "  Creating branch naming ruleset..."
+  gh api "orgs/${ORG}/rulesets" --method POST --input - <<'RULESET'
 {
   "name": "branch-naming-conventions",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
+    "repository_name": {
+      "include": ["~ALL"],
+      "exclude": []
+    },
     "ref_name": {
       "include": ["~ALL"],
-      "exclude": ["refs/heads/main", "refs/heads/rc", "refs/heads/develop", "refs/heads/staging"]
+      "exclude": [
+        "refs/heads/main",
+        "refs/heads/rc",
+        "refs/heads/develop",
+        "refs/heads/staging"
+      ]
     }
   },
   "rules": [
     {
       "type": "branch_name_pattern",
       "parameters": {
-        "name": "Branch naming convention",
+        "name": "branch-naming-convention",
         "negate": false,
         "operator": "regex",
-        "pattern": "^(feature|fix|hotfix)/([A-Z][A-Z0-9]+-[0-9]+|[0-9]+)-[a-z][a-z0-9-]+$|^(chore|docs|test|style|refactor|perf|ci|build)/[a-z][a-z0-9-]+$|^release/[0-9]+\\.x$|^staging$"
+        "pattern": "^(feature|fix|hotfix)/([A-Z][A-Z0-9]+-[0-9]+|[0-9]+)-[a-z][a-z0-9-]+$|^(chore|docs|test|style|refactor|perf|ci|build)/[a-z][a-z0-9-]+$|^release/[0-9]+\\.x$|^dependabot/.*$"
       }
     }
   ]
 }
 RULESET
 
-if [ $? -eq 0 ]; then
-  echo "  ✓ Branch naming ruleset applied"
-else
-  echo "  ✗ Branch naming ruleset failed (requires admin:org scope)"
+  if [ $? -eq 0 ]; then
+    echo "  ✓ Branch naming ruleset created"
+  else
+    echo "  ✗ Branch naming ruleset failed (check admin:org token scope)"
+  fi
 fi
 
 echo ""
