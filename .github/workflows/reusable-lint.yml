@@ -1,0 +1,37 @@
+name: Reusable — Lint (MegaLinter)
+
+on:
+  workflow_call:
+    inputs:
+      validate-all:
+        description: "Lint all files (true) or only changed files (false)"
+        type: boolean
+        default: false
+    secrets:
+      github-token:
+        required: true
+
+jobs:
+  lint:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oxsecurity/megalinter@v8
+        env:
+          GITHUB_TOKEN: ${{ secrets.github-token }}
+          VALIDATE_ALL_CODEBASE: ${{ inputs.validate-all }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: megalinter-reports
+          path: megalinter-reports/
+          retention-days: 7

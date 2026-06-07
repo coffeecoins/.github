@@ -1,0 +1,55 @@
+name: Reusable — SAST (CodeQL + Semgrep)
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: "Comma-separated CodeQL languages (e.g. javascript,python)"
+        type: string
+        default: "javascript,python"
+      semgrep-rules:
+        description: "Semgrep rule sets (space-separated)"
+        type: string
+        default: "p/owasp-top-ten p/cwe-top-25 p/security-audit"
+    secrets:
+      semgrep-token:
+        required: false
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ inputs.languages }}
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: semgrep ci --config ${{ inputs.semgrep-rules }} --sarif --output semgrep.sarif
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.semgrep-token }}
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif

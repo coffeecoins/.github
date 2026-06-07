@@ -1,0 +1,30 @@
+name: Security Vulnerability
+description: Report a security vulnerability — read SECURITY.md first
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Stop — Read This First
+
+        **Do not use this form to report security vulnerabilities.**
+
+        Security vulnerabilities must be reported through our private disclosure process
+        to prevent public exposure before a fix is available.
+
+        Please follow the instructions in [SECURITY.md](../SECURITY.md):
+
+        1. Use [GitHub Security Advisories](../../security/advisories/new) (preferred)
+        2. Or email **security@coffeecoins.com**
+
+        ---
+
+        If you are reporting a **non-security bug**, please use the [Bug Report](?template=bug_report.yml) template instead.
+
+  - type: checkboxes
+    id: acknowledge
+    attributes:
+      label: Acknowledgment
+      options:
+        - label: I understand this form is not for security vulnerabilities and I am using the correct channel
+          required: true

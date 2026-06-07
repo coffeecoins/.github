@@ -1,0 +1,34 @@
+name: Reusable — Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment (development|staging|pre-production|production)"
+        type: string
+        required: true
+      deploy-command:
+        description: "Shell command to run for deployment"
+        type: string
+        required: true
+    secrets:
+      deploy-token:
+        required: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy
+        run: ${{ inputs.deploy-command }}
+        env:
+          DEPLOY_TOKEN: ${{ secrets.deploy-token }}
